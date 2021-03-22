@@ -6,7 +6,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OData.Abstracts;
 using Microsoft.AspNetCore.OData.Common;
 using Microsoft.AspNetCore.OData.Formatter.Deserialization;
@@ -244,24 +243,14 @@ namespace Microsoft.AspNetCore.OData.Extensions
                 return requestContainer;
             }
 
-            IOptions<ODataOptions> odataOptionsOptions = request.HttpContext.RequestServices.GetRequiredService<IOptions<ODataOptions>>();
-            if (odataOptionsOptions == null)
-            {
-                throw Error.InvalidOperation(SRResources.MissingODataServices, nameof(ODataOptions));
-            }
-
-            ODataOptions options = odataOptionsOptions.Value;
-
             // if the prefixName == null, it's a non-model scenario
             if (request.ODataFeature().PrefixName == null)
             {
                 return null;
             }
 
-            return options.GetODataServiceProvider(request.ODataFeature().PrefixName);
-
             // HTTP routes will not have chance to call CreateRequestContainer. We have to call it.
-            // return request.CreateSubServiceProvider(request.ODataFeature().PrefixName);
+            return request.CreateSubServiceProvider(request.ODataFeature().PrefixName);
         }
 
         /// <summary>
@@ -274,7 +263,7 @@ namespace Microsoft.AspNetCore.OData.Extensions
         {
             if (request == null)
             {
-                throw Error.ArgumentNull("request");
+                throw Error.ArgumentNull(nameof(request));
             }
 
             if (request.ODataFeature().SubServiceProvider != null)
@@ -334,10 +323,10 @@ namespace Microsoft.AspNetCore.OData.Extensions
             IServiceScope scope = rootContainer.GetRequiredService<IServiceScopeFactory>().CreateScope();
 
             // Bind scoping request into the OData container.
-            //if (!string.IsNullOrEmpty(routeName))
-            //{
-            //    scope.ServiceProvider.GetRequiredService<HttpRequestScope>().HttpRequest = request;
-            //}
+            if (!string.IsNullOrEmpty(prefixName))
+            {
+                scope.ServiceProvider.GetRequiredService<HttpRequestScope>().HttpRequest = request;
+            }
 
             return scope;
         }

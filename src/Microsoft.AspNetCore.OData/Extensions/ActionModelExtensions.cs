@@ -149,7 +149,12 @@ namespace Microsoft.AspNetCore.OData.Extensions
                 throw Error.ArgumentNull(nameof(path));
             }
 
-            string[] methods = httpMethods.Split(',');
+            // If the methods have different case sensitive, for example, "get", "Get", in the ASP.NET Core 3.1,
+            // It will throw "An item with the same key has already been added. Key: GET", in
+            // HttpMethodMatcherPolicy.BuildJumpTable(Int32 exitDestination, IReadOnlyList`1 edges)
+            // Another root cause is that in attribute routing, we reuse the HttpMethodMetadata, the method name is always "upper" case.
+            // Therefore, we upper the http method name always.
+            string[] methods = httpMethods.ToUpperInvariant().Split(',');
             foreach (string template in path.GetTemplates(options))
             {
                 // Be noted: https://github.com/dotnet/aspnetcore/blob/main/src/Mvc/Mvc.Core/src/ApplicationModels/ActionAttributeRouteModel.cs#L74-L75
@@ -284,22 +289,6 @@ namespace Microsoft.AspNetCore.OData.Extensions
             // append controller attributes to action selector model? -- NO
             // Be noted: https://github.com/dotnet/aspnetcore/blob/main/src/Mvc/Mvc.Core/src/ApplicationModels/ActionAttributeRouteModel.cs#L74-L75
             return selectorModel;
-        }
-
-        /// <summary>
-        /// Gets the supported Http method on the action or by convention using the action name.
-        /// </summary>
-        /// <param name="action">The action model.</param>
-        /// <returns>The supported http methods.</returns>
-        internal static bool HasHttpMethod(this ActionModel action)
-        {
-            if (action == null)
-            {
-                throw Error.ArgumentNull(nameof(action));
-            }
-
-            // Determine the supported methods.
-            return action.Attributes.Any(a => a is IActionHttpMethodProvider);
         }
 
         private static void AddRange<T>(IList<T> list, IEnumerable<T> items)

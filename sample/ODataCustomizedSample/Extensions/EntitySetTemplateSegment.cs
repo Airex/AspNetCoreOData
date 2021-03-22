@@ -19,11 +19,11 @@ namespace ODataCustomizedSample.Extensions
 
         public override bool IsSingle => false;
 
-        public override ODataPathSegment Translate(ODataTemplateTranslateContext context)
+        public override bool TryTranslate(ODataTemplateTranslateContext context)
         {
             if (!context.RouteValues.TryGetValue("classname", out object classname))
             {
-                return null;
+                return false;
             }
 
             string entitySetName = classname as string;
@@ -35,10 +35,11 @@ namespace ODataCustomizedSample.Extensions
             //var edmEntitySet = context.Model.EntityContainer.FindEntitySet(entitySetName);
             if (edmEntitySet != null)
             {
-                return new EntitySetSegment(edmEntitySet);
+                context.Segments.Add(new EntitySetSegment(edmEntitySet));
+                return true;
             }
 
-            return null;
+            return false;
         }
     }
 }
